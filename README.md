@@ -12,4 +12,9 @@ This is a simple news summary app that uses the [NewsCatcher API](https://newsca
 - Display the summarized articles in a simple web interface
 - Option to translate the articles to a different language and read them in the translated language
 
+## Files
+
+- `summarizer.py`: Contains the summarizer class that uses the LLM to summarize articles
+- `main.py`: Contains the main code for the api endpoints
+
 ### Note: This is a work in progress and is not yet complete
