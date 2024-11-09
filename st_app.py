@@ -86,7 +86,7 @@ class NewsCatcher:
             break
 
 
-def main(query: str, topic: str):
+def main(topic: str, query: str):
     news = NewsCatcher()
     all_news = news.fetch_news(topic=topic, query=query)
     news.summarize(all_news)
@@ -94,9 +94,9 @@ def main(query: str, topic: str):
 
 if __name__ == "__main__":
     st.title("Automated News Summarization")
-    query = st.text_input("Enter the search query")
     topic = st.selectbox("Select the topic", ["news", "sport", "tech", "world", "finance", "politics", "business",
                          "economics", "entertainment", "beauty", "travel", "music", "food", "science", "gaming", "energy"])
+    query = st.text_input("Enter the search query")
     if st.button("Summarize"):
         main(topic=topic, query=query)
 
