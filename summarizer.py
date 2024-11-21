@@ -96,3 +96,5 @@ class NewsCatcher:
 
 
 # TODO: Handle cases where user does not provide search query. The search space will automatically be filled with the latest news.
+# TODO: Homepage will display the latest news articles.
+# TODO: A separate page will be used for custom news search.
