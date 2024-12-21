@@ -61,6 +61,11 @@ class NewsCatcher:
         return news
 
     def summarize(self, all_news):
+
+        if 'articles' not in all_news:
+            st.error("No articles found in the response.")
+            return
+
         prompt = PromptTemplate(
             input_variables=["title", "link"],
             template="""
@@ -73,7 +78,7 @@ class NewsCatcher:
 				Please provide a concise summary of the article in markdown format and exclude the output preamble.
 				"""
         )
-        for info in all_news['articles']:
+        for info in all_news['articles'][:2]:
             title = info['title']
             link = info['link']
             chain = prompt | self.llm
@@ -83,10 +88,10 @@ class NewsCatcher:
             st.markdown("Source: " + link)
             st.markdown("\n\n")
             # print("\n\n")
-            break
+            # break
 
 
-def main(topic: str, query: str):
+def main(topic: str, query: str, lang="en"):
     news = NewsCatcher()
     all_news = news.fetch_news(topic=topic, query=query)
     news.summarize(all_news)
@@ -97,8 +102,12 @@ if __name__ == "__main__":
     topic = st.selectbox("Select the topic", ["news", "sport", "tech", "world", "finance", "politics", "business",
                          "economics", "entertainment", "beauty", "travel", "music", "food", "science", "gaming", "energy"])
     query = st.text_input("Enter the search query")
+    lang = st.selectbox("Select your language", [
+                        "en", "hi", "bn", "gu", "te", "mr", "ta", "kn", "ml", "pa", "si", "ur", "zu"])
+    if not lang:
+        lang = "en"
     if st.button("Summarize"):
-        main(topic=topic, query=query)
+        main(topic=topic, query=query, lang=lang)
 
 
 # TODO: Handle cases where user does not provide search query. The search space will automatically be filled with the latest news.

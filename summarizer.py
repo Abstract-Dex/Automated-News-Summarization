@@ -42,7 +42,7 @@ class NewsCatcher:
     def __init__(self) -> None:
         self.api_key = NEWSCATCHER_API_KEY
         self.llm = ChatGroq(
-            groq_api_key=GROQ_API_KEY,
+            # groq_api_key=GROQ_API_KEY,
             model="llama-3.1-8b-instant",
             temperature=0.0,
             max_retries=2,
@@ -60,6 +60,11 @@ class NewsCatcher:
         return news
 
     def summarize(self, all_news):
+        if 'articles' not in all_news:
+            # print("No articles found in the response.")
+            return []
+
+        summaries = []
         prompt = PromptTemplate(
             input_variables=["title", "link"],
             template="""
@@ -72,26 +77,30 @@ class NewsCatcher:
 				Please provide a concise summary of the article in markdown format and exclude the output preamble.
 				"""
         )
-        for info in all_news['articles']:
+        for info in all_news['articles'][:2]:
             title = info['title']
             link = info['link']
             chain = prompt | self.llm
             res = chain.invoke({"title": title, "link": link})
             # print(res.content)
-            return res.content
-            # print("\n\n")
-            break
+            summaries.append(res.content)
+        return summaries
+        # print("\n\n")
 
 
 # def main(query: str, topic: str):
 #     news = NewsCatcher()
 #     all_news = news.fetch_news(topic=topic, query=query)
-#     news.summarize(all_news)
+#     final_news = news.summarize(all_news)
+#     print(final_news)
+#     print("\n\n")
 
 
 # if __name__ == "__main__":
-#     query = os.sys.argv[1]
-#     topic = os.sys.argv[2]
+#     # query = os.sys.argv[1]
+#     # topic = os.sys.argv[2]
+#     query = "NVIDIA"
+#     topic = "tech"
 #     main(query, topic)
 
 
