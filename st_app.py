@@ -3,16 +3,38 @@ import dotenv
 import requests
 import streamlit as st
 
+from googletrans import Translator      # ameyo: translator
+import asyncio                          # ameyo: translator
+
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 
-from translate import TranslatorService
+# from translate import TranslatorService
 
 dotenv.load_dotenv()
 
-NEWSCATCHER_API_KEY = os.getenv("NEWSCATCHER_API_KEY")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+# NEWSCATCHER_API_KEY = os.getenv("NEWSCATCHER_API_KEY")
+# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+NEWSCATCHER_API_KEY = "-HnyDIgD2luJrZwmG6YkC9wzXrKBx7K65rkXoBbX59c"
+GROQ_API_KEY = "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"
+SERPHOUSE_API_KEY = "fXY9vs5VT8un8qxEcaYrkgIH7GdT2LmRhvKviDOEpHvDTQlSX6z8JBSoDMxq"
+
+language_to_iso = {
+    "English": "en",
+    "Hindi": "hi",
+    "Bengali": "bn",
+    "Gujarati": "gu",
+    "Telugu": "te",
+    "Marathi": "mr",
+    "Tamil": "ta",
+    "Kannada": "kn",
+    "Malayalam": "ml",
+    "Punjabi": "pa",
+    "Sinhala": "si",
+    "Urdu": "ur",
+    "Zulu": "zu",
+}
 
 class NewsCatcher:
     """
@@ -51,7 +73,10 @@ class NewsCatcher:
             max_retries=2,
             streaming=True,
         )
-        self.translator = TranslatorService()
+
+        # ameyo: translator
+        # self.translator = TranslatorService()
+        self.translator = Translator()
 
     def fetch_news(self, topic, query="*", lang="en", sort_by="relevancy", page=1, from_date="Yesterday", to_date="Today", countries="IN"):
         url = "https://api.newscatcherapi.com/v2/search"
@@ -62,6 +87,10 @@ class NewsCatcher:
             "GET", url, headers=headers, params=querystring)
         news = response.json()
         return news
+
+    # ameyo: translator
+    def translate(self, text: str, tolang: str) -> str:
+        return asyncio.run(self.translator.translate(text, dest=tolang)).text
 
     def summarize(self, all_news, language: str):
 
@@ -87,21 +116,20 @@ class NewsCatcher:
                 link = info['link']
                 chain = prompt | self.llm
                 res = chain.invoke({"title": title, "link": link})
-                st.markdown("Language: " + language)
-
-                st.subheader("English Summary:")
-                st.markdown(res.content)
+                # st.markdown("Language: " + language)
 
                 if language != "en":
                     with st.spinner(f'Translating to {language}...'):
                         try:
-                            translation = self.translator.translate(
-                                res.content, dest=language)
+                            translation = self.translate(res.content, tolang=language_to_iso[lang])
                             st.subheader(f"Translated Summary ({language}):")
                             # Access the text attribute of translation result
                             st.markdown(translation)
                         except Exception as e:
                             st.error(f"Translation failed: {str(e)}")
+                else:
+                    st.subheader("English Summary:")
+                    st.markdown(res.content)
 
                 # print(res.content)
                 # if language == "en":
@@ -134,9 +162,8 @@ if __name__ == "__main__":
     topic = st.selectbox("Select the topic", ["news", "sport", "tech", "world", "finance", "politics", "business",
                          "economics", "entertainment", "beauty", "travel", "music", "food", "science", "gaming", "energy"])
     query = st.text_input("Enter the search query")
-    # lang = st.selectbox("Select your language", [
-    # "en", "hi", "bn", "gu", "te", "mr", "ta", "kn", "ml", "pa", "si", "ur", "zu"])
-    lang = st.text_input("Select your language")
+    lang = st.selectbox("Select your language", language_to_iso.keys())
+    # lang = st.text_input("Select your language")
     if st.button("Summarize"):
         main(topic=topic, query=query, language=lang)
 

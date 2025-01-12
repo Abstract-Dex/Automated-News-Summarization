@@ -1,3 +1,4 @@
 .env
+.venv
 summarizer1.py
 news.json
