@@ -12,8 +12,8 @@ tokenizer = AutoTokenizer.from_pretrained("ai4bharat/indic-parler-tts")
 description_tokenizer = AutoTokenizer.from_pretrained(
     model.config.text_encoder._name_or_path)
 
-prompt = "কিরে কেমন আছিস।"
-description = "A female speaker delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speaker's voice sounding clear and very close up."
+prompt = "শিঞ্জন একটা বোকাচোদা ছেলে "
+description = "A female speaker with an Indian accent delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speaker's voice sounding clear and very close up."
 
 description_input_ids = description_tokenizer(
     description, return_tensors="pt").to(device)

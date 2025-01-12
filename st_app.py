@@ -6,6 +6,8 @@ import streamlit as st
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 
+from translate import TranslatorService
+
 dotenv.load_dotenv()
 
 NEWSCATCHER_API_KEY = os.getenv("NEWSCATCHER_API_KEY")
@@ -49,6 +51,7 @@ class NewsCatcher:
             max_retries=2,
             streaming=True,
         )
+        self.translator = TranslatorService()
 
     def fetch_news(self, topic, query="*", lang="en", sort_by="relevancy", page=1, from_date="Yesterday", to_date="Today", countries="IN"):
         url = "https://api.newscatcherapi.com/v2/search"
@@ -60,7 +63,7 @@ class NewsCatcher:
         news = response.json()
         return news
 
-    def summarize(self, all_news):
+    def summarize(self, all_news, language: str):
 
         if 'articles' not in all_news:
             st.error("No articles found in the response.")
@@ -78,23 +81,52 @@ class NewsCatcher:
 				Please provide a concise summary of the article in markdown format and exclude the output preamble.
 				"""
         )
-        for info in all_news['articles'][:2]:
-            title = info['title']
-            link = info['link']
-            chain = prompt | self.llm
-            res = chain.invoke({"title": title, "link": link})
-            # print(res.content)
-            st.markdown(res.content)
-            st.markdown("Source: " + link)
-            st.markdown("\n\n")
-            # print("\n\n")
+        for info in all_news['articles'][:1]:
+            with st.spinner('Generating summary...'):
+                title = info['title']
+                link = info['link']
+                chain = prompt | self.llm
+                res = chain.invoke({"title": title, "link": link})
+                st.markdown("Language: " + language)
+
+                st.subheader("English Summary:")
+                st.markdown(res.content)
+
+                if language != "en":
+                    with st.spinner(f'Translating to {language}...'):
+                        try:
+                            translation = self.translator.translate(
+                                res.content, dest=language)
+                            st.subheader(f"Translated Summary ({language}):")
+                            # Access the text attribute of translation result
+                            st.markdown(translation)
+                        except Exception as e:
+                            st.error(f"Translation failed: {str(e)}")
+
+                # print(res.content)
+                # if language == "en":
+                #     st.markdown(res.content)
+                # else:
+                #     with st.spinner(f'Translating to {language}...'):
+                #         translated_content = self.translator.translate(
+                #             res.content, dest=language)
+                #         st.markdown(translated_content)
+                # st.markdown(res.content)
+                st.markdown("Source: " + link)
+                st.markdown("---")
+
+                # translated_content = self.translator.translate(
+                #     res.content, dest=lang)
+                # st.markdown(translated_content)
+                # st.markdown("\n\n")
+                # print("\n\n")
             # break
 
 
-def main(topic: str, query: str, lang="en"):
+def main(topic: str, query: str, language: str):
     news = NewsCatcher()
     all_news = news.fetch_news(topic=topic, query=query)
-    news.summarize(all_news)
+    news.summarize(all_news, language)
 
 
 if __name__ == "__main__":
@@ -102,12 +134,11 @@ if __name__ == "__main__":
     topic = st.selectbox("Select the topic", ["news", "sport", "tech", "world", "finance", "politics", "business",
                          "economics", "entertainment", "beauty", "travel", "music", "food", "science", "gaming", "energy"])
     query = st.text_input("Enter the search query")
-    lang = st.selectbox("Select your language", [
-                        "en", "hi", "bn", "gu", "te", "mr", "ta", "kn", "ml", "pa", "si", "ur", "zu"])
-    if not lang:
-        lang = "en"
+    # lang = st.selectbox("Select your language", [
+    # "en", "hi", "bn", "gu", "te", "mr", "ta", "kn", "ml", "pa", "si", "ur", "zu"])
+    lang = st.text_input("Select your language")
     if st.button("Summarize"):
-        main(topic=topic, query=query, lang=lang)
+        main(topic=topic, query=query, language=lang)
 
 
 # TODO: Handle cases where user does not provide search query. The search space will automatically be filled with the latest news.
