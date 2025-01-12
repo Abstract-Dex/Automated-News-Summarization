@@ -13,12 +13,8 @@ from langchain_core.prompts import PromptTemplate
 
 dotenv.load_dotenv()
 
-# NEWSCATCHER_API_KEY = os.getenv("NEWSCATCHER_API_KEY")
-# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-NEWSCATCHER_API_KEY = "-HnyDIgD2luJrZwmG6YkC9wzXrKBx7K65rkXoBbX59c"
-GROQ_API_KEY = "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"
-SERPHOUSE_API_KEY = "fXY9vs5VT8un8qxEcaYrkgIH7GdT2LmRhvKviDOEpHvDTQlSX6z8JBSoDMxq"
+NEWSCATCHER_API_KEY = os.getenv("NEWSCATCHER_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 language_to_iso = {
     "English": "en",
