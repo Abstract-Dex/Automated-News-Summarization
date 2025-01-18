@@ -98,7 +98,7 @@ class NewsCatcher:
             input_variables=["title", "link"],
             template="""
 				You are an AI assistant. Your task is to read the news title and visit the provided news link. 
-				After visiting the link, summarize the content of the news article.
+				After visiting the link, summarize the content of the news article. Make sure to provide a Heading, Summary and Key Points and finally a Conclusion. Do not mention the subheading preambles.
 
 				News Title: {title}
 				News Link: {link}
@@ -118,13 +118,13 @@ class NewsCatcher:
                     with st.spinner(f'Translating to {language}...'):
                         try:
                             translation = self.translate(res.content, tolang=language_to_iso[lang])
-                            st.subheader(f"Translated Summary ({language}):")
+                            # st.subheader(f"Translated Summary ({language}):")
                             # Access the text attribute of translation result
                             st.markdown(translation)
                         except Exception as e:
                             st.error(f"Translation failed: {str(e)}")
                 else:
-                    st.subheader("English Summary:")
+                    # st.subheader("English Summary:")
                     st.markdown(res.content)
 
                 # print(res.content)
