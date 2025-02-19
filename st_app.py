@@ -64,7 +64,14 @@ class NewsCatcher:
         self.api_key = NEWSCATCHER_API_KEY
         self.llm = ChatGroq(
             groq_api_key=GROQ_API_KEY,
-            model="llama-3.1-8b-instant",
+            model="deepseek-r1-distill-llama-70b",
+            temperature=0.0,
+            max_retries=2,
+            streaming=True,
+        )
+        self.translator = ChatGroq(
+            groq_api_key=GROQ_API_KEY,
+            model="deepseek-r1-distill-llama-70b",
             temperature=0.0,
             max_retries=2,
             streaming=True,
@@ -72,7 +79,7 @@ class NewsCatcher:
 
         # ameyo: translator
         # self.translator = TranslatorService()
-        self.translator = Translator()
+        # self.translator = Translator() --- 
 
     def fetch_news(self, topic, query="*", lang="en", sort_by="relevancy", page=1, from_date="Yesterday", to_date="Today", countries="IN"):
         url = "https://api.newscatcherapi.com/v2/search"
@@ -86,7 +93,21 @@ class NewsCatcher:
 
     # ameyo: translator
     def translate(self, text: str, tolang: str) -> str:
-        return asyncio.run(self.translator.translate(text, dest=tolang)).text
+        # return asyncio.run(self.translator.translate(text, dest=tolang)).text
+        prompt = PromptTemplate(
+            input_variables = ["text","language"],
+            template = """
+            Translate the following text to {language}: {text}
+            """
+        )
+        chain = prompt | self.translator
+        res = chain.invoke({"text": text, "language": tolang})
+        try:
+            index = res.content.index("</think>")
+            res = res.content[index+len("</think>"):]
+        except ValueError:
+            pass        
+        return res
 
     def summarize(self, all_news, language: str):
 
@@ -104,6 +125,9 @@ class NewsCatcher:
 				News Link: {link}
 
 				Please provide a concise summary of the article in markdown format and exclude the output preamble.
+
+                Also do not output your thought process.
+
 				"""
         )
         for info in all_news['articles'][:1]:
@@ -112,12 +136,16 @@ class NewsCatcher:
                 link = info['link']
                 chain = prompt | self.llm
                 res = chain.invoke({"title": title, "link": link})
-                # st.markdown("Language: " + language)
-
-                if language != "en":
+                try:
+                    index = res.content.index("</think>")
+                    res = res.content[index+len("</think>"):]
+                except ValueError:
+                    pass
+                
+                if language_to_iso[language] != "en":
                     with st.spinner(f'Translating to {language}...'):
                         try:
-                            translation = self.translate(res.content, tolang=language_to_iso[lang])
+                            translation = self.translate(res, tolang=language_to_iso[lang])
                             # st.subheader(f"Translated Summary ({language}):")
                             # Access the text attribute of translation result
                             st.markdown(translation)
@@ -125,7 +153,7 @@ class NewsCatcher:
                             st.error(f"Translation failed: {str(e)}")
                 else:
                     # st.subheader("English Summary:")
-                    st.markdown(res.content)
+                    st.markdown(res)
 
                 # print(res.content)
                 # if language == "en":
