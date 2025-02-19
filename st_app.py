@@ -1,3 +1,6 @@
+from tts import get_voice
+from langchain_core.prompts import PromptTemplate
+from langchain_groq import ChatGroq
 import os
 import dotenv
 import requests
@@ -6,10 +9,12 @@ import streamlit as st
 from googletrans import Translator      # ameyo: translator
 import asyncio                          # ameyo: translator
 
-from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
+import soundfile as sf
+from IPython.display import display, Audio
+from kokoro import KPipeline
+import spacy
+spacy.load('en_core_web_sm')
 
-# from translate import TranslatorService
 
 dotenv.load_dotenv()
 
@@ -31,6 +36,13 @@ language_to_iso = {
     "Urdu": "ur",
     "Zulu": "zu",
 }
+
+tts_languages = {
+    "English": "a",
+    "British English": "b",
+    "Hindi": "h",
+}
+
 
 class NewsCatcher:
     """
@@ -76,10 +88,11 @@ class NewsCatcher:
             max_retries=2,
             streaming=True,
         )
+        self.summarized_content = ""
 
         # ameyo: translator
         # self.translator = TranslatorService()
-        # self.translator = Translator() --- 
+        # self.translator = Translator() ---
 
     def fetch_news(self, topic, query="*", lang="en", sort_by="relevancy", page=1, from_date="Yesterday", to_date="Today", countries="IN"):
         url = "https://api.newscatcherapi.com/v2/search"
@@ -95,8 +108,8 @@ class NewsCatcher:
     def translate(self, text: str, tolang: str) -> str:
         # return asyncio.run(self.translator.translate(text, dest=tolang)).text
         prompt = PromptTemplate(
-            input_variables = ["text","language"],
-            template = """
+            input_variables=["text", "language"],
+            template="""
             Translate the following text to {language}: {text}
             """
         )
@@ -106,7 +119,7 @@ class NewsCatcher:
             index = res.content.index("</think>")
             res = res.content[index+len("</think>"):]
         except ValueError:
-            pass        
+            pass
         return res
 
     def summarize(self, all_news, language: str):
@@ -118,7 +131,7 @@ class NewsCatcher:
         prompt = PromptTemplate(
             input_variables=["title", "link"],
             template="""
-				You are an AI assistant. Your task is to read the news title and visit the provided news link. 
+				You are an AI assistant. Your task is to read the news title and visit the provided news link.
 				After visiting the link, summarize the content of the news article. Make sure to provide a Heading, Summary and Key Points and finally a Conclusion. Do not mention the subheading preambles.
 
 				News Title: {title}
@@ -141,55 +154,82 @@ class NewsCatcher:
                     res = res.content[index+len("</think>"):]
                 except ValueError:
                     pass
-                
+                st.write("Setting summary...")
+                self.summarized_content = res
+                print(res)
+
                 if language_to_iso[language] != "en":
                     with st.spinner(f'Translating to {language}...'):
                         try:
-                            translation = self.translate(res, tolang=language_to_iso[lang])
+                            translation = self.translate(
+                                res, tolang=language_to_iso[lang])
                             # st.subheader(f"Translated Summary ({language}):")
-                            # Access the text attribute of translation result
                             st.markdown(translation)
                         except Exception as e:
                             st.error(f"Translation failed: {str(e)}")
                 else:
-                    # st.subheader("English Summary:")
                     st.markdown(res)
+                    st.markdown("Source: " + link)
+                    st.markdown("---")
 
-                # print(res.content)
-                # if language == "en":
-                #     st.markdown(res.content)
-                # else:
-                #     with st.spinner(f'Translating to {language}...'):
-                #         translated_content = self.translator.translate(
-                #             res.content, dest=language)
-                #         st.markdown(translated_content)
-                # st.markdown(res.content)
-                st.markdown("Source: " + link)
-                st.markdown("---")
+            #     # print(res.content)
+            #     if language == "en":
+            #         st.markdown(res.content)
+            #     else:
+            #         with st.spinner(f'Translating to {language}...'):
+            #             translated_content = self.translator.translate(
+            #                 res.content, dest=language)
+            #             st.markdown(translated_content)
+            #     st.markdown(res.content)
+            #     st.markdown("Source: " + link)
+            #     st.markdown("---")
 
-                # translated_content = self.translator.translate(
-                #     res.content, dest=lang)
-                # st.markdown(translated_content)
-                # st.markdown("\n\n")
-                # print("\n\n")
+            #     translated_content = self.translator.translate(
+            #         res.content, dest=lang)
+            #     st.markdown(translated_content)
+            #     st.markdown("\n\n")
+            #     print("\n\n")
             # break
 
-
-def main(topic: str, query: str, language: str):
-    news = NewsCatcher()
-    all_news = news.fetch_news(topic=topic, query=query)
-    news.summarize(all_news, language)
-
-
-if __name__ == "__main__":
-    st.title("Automated News Summarization")
-    topic = st.selectbox("Select the topic", ["news", "sport", "tech", "world", "finance", "politics", "business",
-                         "economics", "entertainment", "beauty", "travel", "music", "food", "science", "gaming", "energy"])
-    query = st.text_input("Enter the search query")
-    lang = st.selectbox("Select your language", language_to_iso.keys())
-    # lang = st.text_input("Select your language")
-    if st.button("Summarize"):
-        main(topic=topic, query=query, language=lang)
+    def generator(self, text, language, gender):
+        lang, voice = get_voice(language, gender)
+        pipeline = KPipeline(lang_code=lang)
+        generator = pipeline(
+            text, voice=voice, speed=1, split_pattern=r'\n+')
+        for i, (gs, ps, audio) in enumerate(generator):
+            sf.write(f'tts_output.wav', audio, 24000)
 
 
-# TODO: Handle cases where user does not provide search query. The search space will automatically be filled with the latest news.
+# def main(topic: str, query: str, language: str):
+#     news = NewsCatcher()
+#     all_news = news.fetch_news(topic=topic, query=query)
+#     summary = news.summarize(all_news, language)
+#     return summary
+
+st.title("Automated News Summarization")
+topic = st.selectbox("Select the topic", ["news", "sport", "tech", "world", "finance", "politics", "business",
+                                          "economics", "entertainment", "beauty", "travel", "music", "food", "science", "gaming", "energy"])
+query = st.text_input("Enter the search query")
+lang = st.selectbox("Select your language", language_to_iso.keys())
+tts_lang = st.selectbox(
+    "Select the language for the audio output", ["English", "British English", "Hindi"])
+gender = st.selectbox("Select the voice gender", ['Male', 'Female'])
+
+news = NewsCatcher()
+
+summary = None
+all_news = news.fetch_news(topic=topic, query=query,
+                           lang=language_to_iso[lang])
+
+if st.button("Summarize"):
+    summary = news.summarize(all_news, lang)
+    st.write(f"Summary in summarize:\n{news.summarized_content}")
+    st.markdown(summary)
+
+if st.button("Generate Audio"):
+    st.write("Summary in tts: ")
+    st.write(news.summarized_content)
+
+    news.generator(news.summarized_content, "English", "Male")
+    st.audio("tts_output.wav", format='audio/wav')
+    # TODO: Handle cases where user does not provide search query. The search space will automatically be filled with the latest news.
