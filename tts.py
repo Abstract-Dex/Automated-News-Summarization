@@ -3,9 +3,12 @@ from kokoro import KPipeline
 import spacy
 import numpy as np
 from typing import Tuple
+import torch
 
 # Load spacy model once
 nlp = spacy.load('en_core_web_sm')
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TextToSpeech:
@@ -49,7 +52,7 @@ class TextToSpeech:
 
         try:
             lang_code, voice = self.get_voice(language, gender)
-            pipeline = KPipeline(lang_code=lang_code)
+            pipeline = KPipeline(lang_code=lang_code, device=device)
 
             # Generate audio in chunks
             generator = pipeline(

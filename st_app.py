@@ -51,13 +51,6 @@ class NewsCatcher:
             max_retries=2,
             streaming=True,
         )
-        self.translator = ChatGroq(
-            groq_api_key=GROQ_API_KEY,
-            model="deepseek-r1-distill-llama-70b",
-            temperature=0.0,
-            max_retries=2,
-            streaming=True,
-        )
         # Storage for different content versions
         self.english_markdown = ""
         self.english_clean = ""
@@ -83,7 +76,7 @@ class NewsCatcher:
             Translate the following text to {language}: {text}
             """
         )
-        chain = prompt | self.translator
+        chain = prompt | self.llm
         res = chain.invoke({"text": text, "language": tolang})
         try:
             index = res.content.index("</think>")
