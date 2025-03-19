@@ -1,8 +1,7 @@
 # News Summary App
 
-This is a simple news summary app that uses the [NewsCatcher API](https://newscatcherapi.com/) to fetch news articles and a Large Language Model (LLM) like the Meta Llama to summarize the articles. 
-
-The app uses `Indic Parler Text-to-speech` model from `HuggingFace` to convert news articles into speech for the user to listen to. It supports multiple languages and can be configured to read the summaries in the user's preferred language.
+This is a simple news summary app that uses a News API to fetch news articles and a Large Language Model (LLM) to summarize articles.
+The app uses `Kokoro Text-to-speech` model from `HuggingFace` to convert news articles into speech for the user to listen to. It supports multiple languages and can be configured to read the summaries in the user's preferred language.
 
 ## Features
 
@@ -20,6 +19,8 @@ The app uses `Indic Parler Text-to-speech` model from `HuggingFace` to convert n
 - `main.py`: Contains the main code for the api endpoints
 - `st_app.py`: Contains the streamlit app code for the web interface
 - `translate.py`: Contains the translator class that uses the Google Translate API to translate articles
-- `tts.py`: Contains the text-to-speech class that uses the Indic Parler Text-to-speech model to convert articles into speech
+- `tts.py`: Contains the text-to-speech class that uses the Indic Parler Text-to-speech model to convert articles 
+into speech
+- `get_news.py`: Contains the news class that fetches news articles from the News API
 
 ### Note: This is a work in progress and is not yet complete

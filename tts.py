@@ -4,7 +4,6 @@ import spacy
 import numpy as np
 from typing import Tuple
 import torch
-
 # Load spacy model once
 nlp = spacy.load('en_core_web_sm')
 
