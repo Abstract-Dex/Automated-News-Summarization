@@ -1,5 +1,5 @@
-from tts import TextToSpeech
-from text_cleaning import clean_markdown_for_tts
+from utils.tts import TextToSpeech
+from utils.text_cleaning import clean_markdown_for_tts
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 import os
