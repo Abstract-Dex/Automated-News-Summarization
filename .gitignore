@@ -5,3 +5,4 @@ news.json
 test.ipynb
 *.wav
 dependencies
+__pycache__
