@@ -1,6 +1,5 @@
 import os
 import re
-# import dotenv
 import requests
 import uvicorn
 from typing import Optional
@@ -11,8 +10,6 @@ from langchain_core.prompts import PromptTemplate
 
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
-
-# dotenv.load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -84,7 +81,6 @@ llm = ChatGroq(
     api_key=GROQ_API_KEY,
     temperature=0.0,
     max_retries=2,
-    streaming=True,
 )
 
 
@@ -93,7 +89,6 @@ translator = ChatGroq(
     api_key=GROQ_API_KEY,
     temperature=0.0,
     max_retries=2,
-    streaming=True,
 )
 
 
