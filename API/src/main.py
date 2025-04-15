@@ -77,7 +77,7 @@ class TranslatorResponse(BaseModel):
 
 
 llm = ChatGroq(
-    model="deepseek-r1-distill-qwen-32b",
+    model="deepseek-r1-distill-llama-70b",
     api_key=GROQ_API_KEY,
     temperature=0.0,
     max_retries=2,
