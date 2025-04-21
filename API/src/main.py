@@ -183,7 +183,7 @@ async def translate_text(request: TranslatorRequest):
         # Generate translation
         chain = prompt | translator
         result = chain.invoke({
-            "headline": request.title,
+            "headline": request.headline,
             "text": request.text,
             "target_lang": request.target_lang
         })
