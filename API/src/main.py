@@ -68,6 +68,7 @@ class SummarizerResponse(BaseModel):
 
 
 class TranslatorRequest(BaseModel):
+    headline: str
     text: str
     target_lang: str
 
@@ -85,7 +86,7 @@ llm = ChatGroq(
 
 
 translator = ChatGroq(
-    model="gemma2-9b-it",
+    model="llama-3.3-70b-versatile",
     api_key=GROQ_API_KEY,
     temperature=0.0,
     max_retries=2,
@@ -106,17 +107,19 @@ def health_check():
 async def summarize_article(request: SummarizerRequest):
     try:
         prompt = PromptTemplate(
-            input_variables=["title", "body", "link"],
+            input_variables=["headline", "body", "link"],
             template="""
             <think>
             You are an AI assistant specialized in summarizing news articles.
+            Return the summary in JSON format with 'summary' and 'key_points' keys.
             </think>
 
-            Summarize the following news article. Provide a:
-            1. Summary of the main points (2-3 paragraphs)
-            2. Key takeaways (3-5 bullet points)
-
-            Format the response in markdown.
+            Summarize the following news article in this exact JSON format:
+            {
+              "headline": "article headline here",
+              "summary": "2-3 paragraphs summarizing the main points",
+              "key_points": ["point 1", "point 2", "point 3", "point 4", "point 5"]
+            }
 
             Title: {title}
             Article: {body}
@@ -154,25 +157,33 @@ async def summarize_article(request: SummarizerRequest):
 async def translate_text(request: TranslatorRequest):
     try:
         prompt = PromptTemplate(
-            input_variables=["text", "target_lang"],
+            input_variables=["headline", "text", "target_lang"],
             template="""
               <think>
-              You are an AI assistant specialized in translation. 
-              Only return the translated text without any extra words.
+              You are an expert translator specialized in maintaining the tone, context, and nuances 
+              of the original text while providing accurate translations.
+              Return the translation in JSON format with 'heading' and 'body' keys.
               </think>
 
-              Translate the following text to the target language.
+              Translate the following news article to {target_lang}, preserving the journalistic style 
+              and formal tone. Ensure names, dates, numbers, and technical terms are accurately translated.
 
-              Text: {text}
+              Format your response as:
+              {{
+            "heading": "translated headline here",
+            "body": "translated article text here"
+              }}
+
+              Headline: {headline}
+              Article: {text}
               Target Language: {target_lang}
-
-              Translation:
               """
         )
 
         # Generate translation
         chain = prompt | translator
         result = chain.invoke({
+            "headline": request.title,
             "text": request.text,
             "target_lang": request.target_lang
         })
