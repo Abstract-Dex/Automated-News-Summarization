@@ -107,7 +107,7 @@ def health_check():
 async def summarize_article(request: SummarizerRequest):
     try:
         prompt = PromptTemplate(
-            input_variables=["headline", "body", "link"],
+            input_variables=["title", "body", "link"],
             template="""
             <think>
             You are an AI assistant specialized in summarizing news articles.
