@@ -115,11 +115,11 @@ async def summarize_article(request: SummarizerRequest):
             </think>
 
             Summarize the following news article in this exact JSON format:
-            {
-              "headline": "article headline here",
+            {{
+              "title": "article title here",
               "summary": "2-3 paragraphs summarizing the main points",
               "key_points": ["point 1", "point 2", "point 3", "point 4", "point 5"]
-            }
+            }}
 
             Title: {title}
             Article: {body}
