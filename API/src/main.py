@@ -110,17 +110,22 @@ async def summarize_article(request: SummarizerRequest):
         prompt = PromptTemplate(
             input_variables=["title", "body", "link"],
             template="""
-           Summarize the following news article as a JSON object with these exact keys:
-            - "headline": The original article headline
-            - "summary": 2-3 paragraphs summarizing the main points
-            - "key_points": An array of 5 key takeaways from the article
-            
-            Return ONLY the JSON object and nothing else.
-            
-            Title: {title}
-            Article: {body}
-            Source: {link}
-            """
+        Summarize the following news article as a JSON object with these exact keys:
+        - "headline": The original article headline
+        - "summary": 2-3 paragraphs summarizing the main points
+        - "key_points": An array of 5 key takeaways from the article
+
+        IMPORTANT INSTRUCTIONS:
+        1. Return ONLY the raw JSON object starting with the opening curly brace { and ending with the closing curly brace }
+        2. DO NOT include markdown formatting like ```json or ``` around the JSON
+        3. DO NOT include any explanations, notes or text outside the JSON object
+        4. The first character of your response must be {
+        5. The last character of your response must be }
+
+        Title: {title}
+        Article: {body}
+        Source: {link}
+        """
         )
 
         # Generate summary
@@ -197,14 +202,21 @@ async def translate_text(request: TranslatorRequest):
         prompt = PromptTemplate(
             input_variables=["headline", "text", "target_lang"],
             template="""
-            You are an expert translator specialized in maintaining the tone, context, and nuances 
+            You are an expert translator specialized in maintaining the tone, context, and nuances
             of the original text while providing accurate translations.
             Translate the following news article to {target_lang}.
-            
+
             Return ONLY a JSON object with these exact keys:
             - "translated_headline": The translated headline
             - "translated_body": The translated article text
-            
+
+            IMPORTANT INSTRUCTIONS:
+            1. Return ONLY the raw JSON object starting with the opening curly brace { and ending with the closing curly brace }
+            2. DO NOT include markdown formatting like ```json or ``` around the JSON
+            3. DO NOT include any explanations, notes or text outside the JSON object
+            4. The first character of your response must be {
+            5. The last character of your response must be }
+
             Headline: {headline}
             Article: {text}
             Target Language: {target_lang}
