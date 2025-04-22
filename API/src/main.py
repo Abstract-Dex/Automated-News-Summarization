@@ -1,4 +1,5 @@
 import os
+import json
 import re
 import requests
 import uvicorn
@@ -109,19 +110,12 @@ async def summarize_article(request: SummarizerRequest):
         prompt = PromptTemplate(
             input_variables=["title", "body", "link"],
             template="""
-            Summarize the following news article in a clear, structured markdown format.
+           Summarize the following news article as a JSON object with these exact keys:
+            - "headline": The original article headline
+            - "summary": 2-3 paragraphs summarizing the main points
+            - "key_points": An array of 5 key takeaways from the article
             
-            # {title}
-            
-            ## Summary
-            {{Write 2-3 paragraphs summarizing the main points}}
-            
-            ## Key Points
-            - {{point 1}}
-            - {{point 2}}
-            - {{point 3}}
-            - {{point 4}}
-            - {{point 5}}
+            Return ONLY the JSON object and nothing else.
             
             Title: {title}
             Article: {body}
@@ -146,10 +140,52 @@ async def summarize_article(request: SummarizerRequest):
         except ValueError:
             cleaned_content = content.strip()
 
-        return {
-            "summary": cleaned_content,
-            "cleaned_summary": clean_markdown_for_tts(cleaned_content)
-        }
+        # Find first { and last } to extract JSON
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+
+            try:
+                # Parse JSON
+                parsed_json = json.loads(json_str)
+
+                # Build TTS-friendly text by concatenating headline, summary and points
+                tts_parts = []
+
+                if "headline" in parsed_json:
+                    tts_parts.append(parsed_json["headline"])
+
+                if "summary" in parsed_json:
+                    tts_parts.append(parsed_json["summary"])
+
+                if "key_points" in parsed_json and isinstance(parsed_json["key_points"], list):
+                    # Join key points into sentences
+                    points_text = ". ".join(parsed_json["key_points"])
+                    if not points_text.endswith("."):
+                        points_text += "."
+                    tts_parts.append(points_text)
+
+                # Join all parts with spaces
+                cleaned_text = " ".join(tts_parts)
+
+                # Return both original JSON and cleaned text
+                return {
+                    "summary": content,
+                    "cleaned_summary": cleaned_text
+                }
+            except json.JSONDecodeError:
+                # If JSON parsing fails, fall back to the original content
+                return {
+                    "summary": content,
+                    "cleaned_summary": content
+                }
+        else:
+            # If no JSON found, return original content
+            return {
+                "summary": content,
+                "cleaned_summary": content
+            }
+
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Summarization failed: {str(e)}")
@@ -163,13 +199,12 @@ async def translate_text(request: TranslatorRequest):
             template="""
             You are an expert translator specialized in maintaining the tone, context, and nuances 
             of the original text while providing accurate translations.
-            Translate the following news article to {target_lang}, preserving the journalistic style 
-            and formal tone. Ensure names, dates, numbers, and technical terms are accurately translated.
+            Translate the following news article to {target_lang}.
             
-            # {{translated headline here}}
-                
-            ## {{translated article text here}}
-
+            Return ONLY a JSON object with these exact keys:
+            - "translated_headline": The translated headline
+            - "translated_body": The translated article text
+            
             Headline: {headline}
             Article: {text}
             Target Language: {target_lang}
