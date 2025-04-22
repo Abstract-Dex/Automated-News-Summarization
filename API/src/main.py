@@ -141,7 +141,7 @@ async def summarize_article(request: SummarizerRequest):
             cleaned_content = content.strip()
 
         # Find first { and last } to extract JSON
-        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        json_match = re.search(r'\{.*\}', cleaned_content, re.DOTALL)
         if json_match:
             json_str = json_match.group(0)
 
@@ -170,20 +170,20 @@ async def summarize_article(request: SummarizerRequest):
 
                 # Return both original JSON and cleaned text
                 return {
-                    "summary": content,
+                    "summary": cleaned_content,
                     "cleaned_summary": cleaned_text
                 }
             except json.JSONDecodeError:
                 # If JSON parsing fails, fall back to the original content
                 return {
-                    "summary": content,
-                    "cleaned_summary": content
+                    "summary": cleaned_content,
+                    "cleaned_summary": cleaned_content
                 }
         else:
             # If no JSON found, return original content
             return {
-                "summary": content,
-                "cleaned_summary": content
+                "summary": cleaned_content,
+                "cleaned_summary": cleaned_content
             }
 
     except Exception as e:
