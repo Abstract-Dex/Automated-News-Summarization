@@ -109,18 +109,20 @@ async def summarize_article(request: SummarizerRequest):
         prompt = PromptTemplate(
             input_variables=["title", "body", "link"],
             template="""
-            <think>
-            You are an AI assistant specialized in summarizing news articles.
-            Return the summary in JSON format with 'summary' and 'key_points' keys.
-            </think>
-
-            Summarize the following news article in this exact JSON format:
-            {{
-              "title": "article title here",
-              "summary": "2-3 paragraphs summarizing the main points",
-              "key_points": ["point 1", "point 2", "point 3", "point 4", "point 5"]
-            }}
-
+            Summarize the following news article in a clear, structured markdown format.
+            
+            # {title}
+            
+            ## Summary
+            {{Write 2-3 paragraphs summarizing the main points}}
+            
+            ## Key Points
+            - {{point 1}}
+            - {{point 2}}
+            - {{point 3}}
+            - {{point 4}}
+            - {{point 5}}
+            
             Title: {title}
             Article: {body}
             Source: {link}
@@ -159,25 +161,19 @@ async def translate_text(request: TranslatorRequest):
         prompt = PromptTemplate(
             input_variables=["headline", "text", "target_lang"],
             template="""
-              <think>
-              You are an expert translator specialized in maintaining the tone, context, and nuances 
-              of the original text while providing accurate translations.
-              Return the translation in JSON format with 'heading' and 'body' keys.
-              </think>
+            You are an expert translator specialized in maintaining the tone, context, and nuances 
+            of the original text while providing accurate translations.
+            Translate the following news article to {target_lang}, preserving the journalistic style 
+            and formal tone. Ensure names, dates, numbers, and technical terms are accurately translated.
+            
+            # {{translated headline here}}
+                
+            ## {{translated article text here}}
 
-              Translate the following news article to {target_lang}, preserving the journalistic style 
-              and formal tone. Ensure names, dates, numbers, and technical terms are accurately translated.
-
-              Format your response as:
-              {{
-            "heading": "translated headline here",
-            "body": "translated article text here"
-              }}
-
-              Headline: {headline}
-              Article: {text}
-              Target Language: {target_lang}
-              """
+            Headline: {headline}
+            Article: {text}
+            Target Language: {target_lang}
+            """
         )
 
         # Generate translation
@@ -193,3 +189,6 @@ async def translate_text(request: TranslatorRequest):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Translation failed: {str(e)}")
+
+
+# TODO: Cleaned summary is cleaning the entire summary. Fix that
