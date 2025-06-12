@@ -7,7 +7,7 @@ import torch
 # Load spacy model once
 nlp = spacy.load('en_core_web_sm')
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TextToSpeech:
@@ -31,6 +31,9 @@ class TextToSpeech:
     def __init__(self):
         """Initialize TTS pipeline"""
         self.sample_rate = 24000
+        device = torch.device(
+            "mps" if torch.backends.mps.is_available() else "cpu")
+        self.device = str(device)
 
     def get_voice(self, lang: str, gender: str) -> Tuple[str, str]:
         """Get voice code based on language and gender"""
@@ -51,7 +54,7 @@ class TextToSpeech:
 
         try:
             lang_code, voice = self.get_voice(language, gender)
-            pipeline = KPipeline(lang_code=lang_code, device=device)
+            pipeline = KPipeline(lang_code=lang_code, device=self.device)
 
             # Generate audio in chunks
             generator = pipeline(
@@ -81,3 +84,21 @@ class TextToSpeech:
 
         except Exception as e:
             raise RuntimeError(f"Audio generation failed: {str(e)}")
+
+
+tts = TextToSpeech()
+
+
+def generate_tts(text: str, language: str, gender: str) -> str:
+    """Generate TTS audio file"""
+    return tts.generate_audio(text=text, language=language, gender=gender)
+
+
+if __name__ == "__main__":
+    # Example usage
+    try:
+        audio_file = generate_tts(
+            "Hello, this is a test.", "English", "Female")
+        print(f"Audio generated successfully: {audio_file}")
+    except Exception as e:
+        print(f"Error generating audio: {str(e)}")

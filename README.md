@@ -5,22 +5,21 @@ The app uses `Kokoro Text-to-speech` model from `HuggingFace` to convert news ar
 
 ## Features
 
-- Fetch news articles from the NewsCatcher API
+- Fetch news articles from the News APIs
   - Customizable search query and filters
   - Customizable news source and category
   - Customizable time range
 - Summarize the articles using a Large Language Model (LLM)
-- Display the summarized articles in a simple web interface
+- Display the summarized articles in a simple app interface
 - Option to translate the articles to a different language and read them in the translated language
 
 ## Files
 
-- `summarizer.py`: Contains the summarizer class that uses the LLM to summarize articles
-- `main.py`: Contains the main code for the api endpoints
-- `st_app.py`: Contains the streamlit app code for the web interface
-- `translate.py`: Contains the translator class that uses the Google Translate API to translate articles
-- `tts.py`: Contains the text-to-speech class that uses the Indic Parler Text-to-speech model to convert articles 
-into speech
-- `get_news.py`: Contains the news class that fetches news articles from the News API
+- Under `API/src/`:
 
-### Note: This is a work in progress and is not yet complete
+  - `main.py`: Contains the main application logic, including fetching news articles, summarizing them, and handling user requests.
+  - `Dockerfile`: Defines the Docker image for the application.
+  - `requirements.txt`: Lists the Python dependencies required for the application.
+
+- Under `utils/`:
+  - `tts.py`: Contains functions to convert text to speech using the Kokoro Text-to-speech model.
