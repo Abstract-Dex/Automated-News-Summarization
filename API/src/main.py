@@ -76,6 +76,7 @@ class TranslatorRequest(BaseModel):
 
 class TranslatorResponse(BaseModel):
     translated_text: str
+    translated_heading: str
 
 
 llm = ChatGroq(
@@ -116,11 +117,11 @@ async def summarize_article(request: SummarizerRequest):
         - "key_points": An array of 5 key takeaways from the article
 
         IMPORTANT INSTRUCTIONS:
-        1. Return ONLY the raw JSON object starting with the opening curly brace { and ending with the closing curly brace }
+        1. Return ONLY the raw JSON object starting with the opening curly brace {{ and ending with the closing curly brace }}
         2. DO NOT include markdown formatting like ```json or ``` around the JSON
         3. DO NOT include any explanations, notes or text outside the JSON object
-        4. The first character of your response must be {
-        5. The last character of your response must be }
+        4. The first character of your response must be {{
+        5. The last character of your response must be }}
 
         Title: {title}
         Article: {body}
@@ -202,20 +203,34 @@ async def translate_text(request: TranslatorRequest):
         prompt = PromptTemplate(
             input_variables=["headline", "text", "target_lang"],
             template="""
-            You are an expert translator specialized in maintaining the tone, context, and nuances
-            of the original text while providing accurate translations.
-            Translate the following news article to {target_lang}.
+            You are an expert translator specialized in maintaining the tone, context, and nuances of the original text while providing accurate translations.
 
-            Return ONLY a JSON object with these exact keys:
-            - "translated_headline": The translated headline
-            - "translated_body": The translated article text
+            Translate the following news article into {target_lang}, ensuring that:
 
-            IMPORTANT INSTRUCTIONS:
-            1. Return ONLY the raw JSON object starting with the opening curly brace { and ending with the closing curly brace }
-            2. DO NOT include markdown formatting like ```json or ``` around the JSON
-            3. DO NOT include any explanations, notes or text outside the JSON object
-            4. The first character of your response must be {
-            5. The last character of your response must be }
+            The output is in valid Markdown format, with proper use of headings (#, ##, etc.), paragraphs, lists, etc.
+
+            The heading must appear as a normal string without any Markdown formatting, but it should be the first line of the output.
+
+            The article body starts immediately after the headline, preserving all original structure (headings, bullets, etc.).
+
+            The headline and article body must be separated by a </break> tag.
+
+            The original structure (e.g., headings, sections, bullets) must be preserved exactly as-is in the translated version.
+
+            DO NOT merge sections into one block of text — keep formatting consistent with the input.
+
+            Maintain line breaks, spacing, and heading levels.
+
+
+            Important Instructions:
+
+            Return only the translated article in Markdown, starting with the headline as a Markdown heading.
+
+            DO NOT include JSON or wrap the output in any JSON structure.
+
+            DO NOT add any explanations, notes, or commentary — return only the translated Markdown content.
+
+            If the input has sections (e.g., ## Background, ### Analysis), keep them intact and translate the headings accordingly.
 
             Headline: {headline}
             Article: {text}
@@ -231,11 +246,9 @@ async def translate_text(request: TranslatorRequest):
             "target_lang": request.target_lang
         })
 
-        return {"translated_text": result.content}
+        result = result.content.split("</break>")
+        return {"translated_heading": result[0].strip(), "translated_text": result[1].strip()}
 
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Translation failed: {str(e)}")
-
-
-# TODO: Cleaned summary is cleaning the entire summary. Fix that
